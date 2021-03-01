@@ -144,7 +144,8 @@
                 'CreateUIDefinitionFullPath','createUIDefinitionText','CreateUIDefinitionObject',
                 'FolderName', 'HasCreateUIDefinition', 'IsMainTemplate','FolderFiles',
                 'MainTemplatePath', 'MainTemplateObject', 'MainTemplateText',
-                'MainTemplateResources','MainTemplateVariables','MainTemplateParameters', 'MainTemplateOutputs'
+                'MainTemplateResources','MainTemplateVariables','MainTemplateParameters', 'MainTemplateOutputs',
+                'isParametersFile', 'ParameterFileName', 'ParameterObject', 'ParameterText'
 
             foreach ($_ in $WellKnownVariables) {
                 $ExecutionContext.SessionState.PSVariable.Set($_, $null)
@@ -165,13 +166,23 @@
             #*$TemplateObject (the template text, converted from JSON)
             $TemplateObject = Import-Json -FilePath $TemplateFullPath
 
-            if ($resolvedTemplatePath -like '*.json' -and 
-                $TemplateObject.'$schema' -like '*CreateUIDefinition*') {
+            $isParametersFile = $resolvedTemplatePath -like '*.parameters.json'
+
+            if ($resolvedTemplatePath -like '*.json' -and $TemplateObject.'$schema' -like '*CreateUIDefinition*') {
                 $createUiDefinitionFullPath = "$resolvedTemplatePath"
                 $createUIDefinitionText = [IO.File]::ReadAllText($createUiDefinitionFullPath)
                 $createUIDefinitionObject = Import-Json -FilePath $createUiDefinitionFullPath
                 $HasCreateUIDefinition = $true
                 $isMainTemplate = $false
+                $templateFile =  $TemplateText = $templateObject = $TemplateFullPath = $templateFileName = $null
+            } elseif ($isParametersFile) {
+                #*$parameterText (the text contents of a parameters file (*.parameters.json)
+                $ParameterText = $TemplateText
+                #*$parameterObject (the text, converted from json)
+                $ParameterObject =  $TemplateObject
+                #*$HasParameter (indicates if parameters file exists (*.parameters.json))
+                $HasParameters = $true   
+                $ParameterFileName = $templateFileName
                 $templateFile =  $TemplateText = $templateObject = $TemplateFullPath = $templateFileName = $null
             } else {
                 #*$CreateUIDefinitionFullPath (the path to CreateUIDefinition.json)
